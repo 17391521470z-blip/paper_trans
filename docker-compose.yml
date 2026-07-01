@@ -1,0 +1,216 @@
+# =====================================================
+# paper-translate — Docker Compose
+# =====================================================
+# 一键启动所有服务：
+#   docker compose up -d
+# 验证：
+#   docker compose config
+# 查看日志：
+#   docker compose logs -f
+# 停止：
+#   docker compose down
+# =====================================================
+
+name: paper-translate
+
+services:
+  # -------------------------------------------------
+  # 1. frontend — Nginx 托管 Vite 静态资源（端口 80）
+  # -------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: paper-translate/frontend:latest
+    container_name: paper-translate-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - appnet
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # -------------------------------------------------
+  # 2. api — FastAPI + uvicorn（端口 8000）
+  # -------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: paper-translate/backend:latest
+    container_name: paper-translate-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads:/app/uploads
+      - downloads:/app/downloads
+    networks:
+      - appnet
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # -------------------------------------------------
+  # 3. worker — Dramatiq 消费者，无端口
+  # -------------------------------------------------
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    image: paper-translate/worker:latest
+    container_name: paper-translate-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    volumes:
+      - uploads:/app/uploads
+      - downloads:/app/downloads
+    networks:
+      - appnet
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q dramatiq || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # -------------------------------------------------
+  # 4. redis — Dramatiq broker（端口 6379）
+  # -------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: paper-translate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # -------------------------------------------------
+  # 5. postgres — 业务数据（端口 5432）
+  # -------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: paper-translate-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # -------------------------------------------------
+  # 6. nginx — 反向代理 + SSL 终止（端口 443 + 80）
+  # -------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: paper-translate-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - appnet
+    depends_on:
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# =====================
+# Networks
+# =====================
+networks:
+  appnet:
+    name: paper-translate-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# =====================
+# Volumes
+# =====================
+volumes:
+  postgres_data:
+    name: paper-translate-postgres-data
+  redis_data:
+    name: paper-translate-redis-data
+  uploads:
+    name: paper-translate-uploads
+  downloads:
+    name: paper-translate-downloads
+  nginx_logs:
+    name: paper-translate-nginx-logs

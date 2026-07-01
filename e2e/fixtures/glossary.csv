@@ -1,0 +1,4 @@
+term,translation,context
+transformer,Transformer 模型,深度学习
+embedding,嵌入,表示学习
+fine-tuning,微调,训练

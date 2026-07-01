@@ -1,0 +1,11 @@
+# alembic 迁移说明
+
+本目录为数据库 schema 演进使用。当前 MVP 通过 `Base.metadata.create_all()` 在应用启动时自动建表，正式上线前请生成首个迁移：
+
+```bash
+cd backend
+alembic revision --autogenerate -m "init schema"
+alembic upgrade head
+```
+
+`env.py` 已自动从 `app.core.config.get_settings()` 读取 `DATABASE_URL`，无需在 `alembic.ini` 中重复配置。

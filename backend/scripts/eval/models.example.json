@@ -1,0 +1,45 @@
+{
+  "_comment": "硅基流动 OpenAI 兼容端点配置。价格为每 1K tokens 人民币，当前为估算值，请登录 https://siliconflow.cn/pricing 核实后更新。",
+  "models": [
+    {
+      "name": "deepseek-v4-flash-silicon",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "sk-tyyqxvhnovyibuokujkfzoywidcwdrdjibiovolvimispqxv",
+      "model": "deepseek-ai/DeepSeek-V4-Flash",
+      "prompt_price_cny_per_1k": 0.0007,
+      "completion_price_cny_per_1k": 0.002
+    },
+    {
+      "name": "deepseek-v4-pro-silicon",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "sk-jikehcgcymyclhhbihakfhuubuccjjostaxgvbhqcmgtnthm",
+      "model": "deepseek-ai/DeepSeek-V4-Pro",
+      "prompt_price_cny_per_1k": 0.009,
+      "completion_price_cny_per_1k": 0.024
+    },
+    {
+      "name": "glm-4.5-air-silicon",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "sk-qiqivkiutcnnhywdpbicrraxxsxapkbsetgtmnilnwoxqgdx",
+      "model": "zai-org/GLM-4.5-Air",
+      "prompt_price_cny_per_1k": 0.001,
+      "completion_price_cny_per_1k": 0.006
+    },
+    {
+      "name": "qwen-3.5-silicon",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "sk-iguwqmwgvsjvqlxibgilewefpddymnhuppucpaocxqcqkjhp",
+      "model": "Qwen/Qwen3.5-397B-A17B",
+      "prompt_price_cny_per_1k": 0.004,
+      "completion_price_cny_per_1k": 0.012
+    },
+    {
+      "name": "qwen-3.6-silicon",
+      "base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "sk-pdjamlkeznctxhstwdpxqobiedqpjgerowvmnpravkgbnqfm",
+      "model": "Qwen/Qwen3.6-35B-A3B",
+      "prompt_price_cny_per_1k": 0.002,
+      "completion_price_cny_per_1k": 0.006
+    }
+  ]
+}

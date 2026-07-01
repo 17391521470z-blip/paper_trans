@@ -1,0 +1,12 @@
+[
+  { "term": "attention mechanism", "translation": "注意力机制" },
+  { "term": "transformer", "translation": "Transformer" },
+  { "term": "large language model", "translation": "大语言模型" },
+  { "term": "fine-tuning", "translation": "微调" },
+  { "term": "prompt engineering", "translation": "提示工程" },
+  { "term": "hallucination", "translation": "幻觉" },
+  { "term": "backpropagation", "translation": "反向传播" },
+  { "term": "gradient descent", "translation": "梯度下降" },
+  { "term": "neural network", "translation": "神经网络" },
+  { "term": "reinforcement learning", "translation": "强化学习" }
+]

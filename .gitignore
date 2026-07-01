@@ -1,0 +1,228 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+.python-version
+
+# pytest / mypy / coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# =====================
+# Node / Frontend
+# =====================
+node_modules/
+.pnpm-store/
+.yarn/
+.parcel-cache/
+.next/
+.nuxt/
+.vite/
+.cache/
+.turbo/
+
+# Build outputs
+frontend/dist/
+frontend/build/
+frontend/.output/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Local env
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# =====================
+# Docker
+# =====================
+# Comment these out if you want to commit Docker volumes
+# /postgres_data
+# /redis_data
+# /uploads
+# /downloads
+
+# =====================
+# Environment & Secrets
+# =====================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
+config/local.json
+
+# =====================
+# IDE
+# =====================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.fleet/
+.cursor/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# =====================
+# OS
+# =====================
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+
+# =====================
+# Project-specific
+# =====================
+# Uploaded PDFs and generated outputs
+uploads/
+downloads/
+results/
+tmp/
+*.pdf
+!docs/**/*.pdf
+
+# Glossary uploads
+glossaries/uploads/
+
+# Logs
+logs/
+*.log
+
+# Dramatiq / Celery
+dramatiq-results/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Coverage
+coverage/
+
+# Translated PDFs (should not be committed)
+translations/
+*.translated.pdf
+*.monolingual.pdf
+
+# Benchmark configs with real API keys
+backend/scripts/eval/models.json
+backend/scripts/eval/data/**
+!backend/scripts/eval/data/terms.example.json
+
+# Claude Code local config
+.claude/
+
+# Backend local artifacts
+backend/.env
+backend/paper_translate.db
+backend/*.pdf
+backend/*.md
+backend/*.csv
+backend/*.log
+backend/__pycache__/
+
+# Test outputs
+tests/downloads/
+tests/screenshots/
+tests/reports/
+tests/*.log
+
+# Frontend build info / cache
+frontend/tsconfig.*.tsbuildinfo
+frontend/vite.config.js.timestamp-*
+frontend/.ignored/
+
+# E2E test PDFs
+e2e/fixtures/*.pdf
+
+# Frontend generated / lock files
+frontend/package-lock.json
+frontend/vite.config.js
+frontend/*.timestamp-*.mjs
+
+# Temporary review artifacts
+push_files.txt
+
+# =====================
+# Allow AGPL-3.0 license and docs to be committed
+# ==================================================
+!LICENSE
+!README.md
+!docs/**/*.md
