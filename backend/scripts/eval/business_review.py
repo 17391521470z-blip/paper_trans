@@ -249,7 +249,19 @@ def main() -> int:
             dest = output_dir / f"{args.pdf.stem}_{name}.pdf"
             print(f"下载双语 PDF -> {dest}")
             download_pdf(args.base_url, token, task_id, dest)
-            print(f"完成: {dest}\n")
+            print(f"完成: {dest}")
+
+            # 删除任务，避免下一个模型上传时命中缓存
+            try:
+                api_request(
+                    f"{args.base_url}/api/v1/tasks/{task_id}",
+                    method="DELETE",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=30,
+                )
+                print(f"已删除任务 {task_id}，避免缓存干扰\n")
+            except Exception as exc:  # noqa: BLE001
+                print(f"删除任务失败（可忽略）: {exc}\n")
         except Exception as exc:  # noqa: BLE001
             print(f"[{name}] 出错: {exc}\n")
             continue

@@ -202,9 +202,16 @@ async def _publish(
 
 def _detect_pdf2zh_cli() -> str | None:
     """Detect the pdf2zh_next CLI (not Python API — for use with subprocess)."""
-    venv_bin = str(Path(sys.executable).parent / "pdf2zh_next")
-    alt_bin = str(Path(sys.executable).parent / "pdf2zh")
-    for candidate in (venv_bin, alt_bin, "pdf2zh_next", "pdf2zh"):
+    scripts_dir = Path(sys.executable).parent
+    candidates = [
+        str(scripts_dir / "pdf2zh_next"),
+        str(scripts_dir / "pdf2zh_next.exe"),
+        str(scripts_dir / "pdf2zh"),
+        str(scripts_dir / "pdf2zh.exe"),
+        "pdf2zh_next",
+        "pdf2zh",
+    ]
+    for candidate in candidates:
         try:
             subprocess.run(
                 [candidate, "--help"],
