@@ -147,7 +147,7 @@ def main() -> int:
         return 1
 
     script_dir = Path(__file__).parent
-    repo_root = script_dir.parents[1]  # backend/scripts/eval -> backend -> repo root
+    repo_root = script_dir.parents[2]  # backend/scripts/eval -> backend -> repo root
     models_path = args.models or script_dir / "models.json"
     env_path = repo_root / "backend" / ".env"
     output_dir = args.output_dir or script_dir / "data" / "review_pdfs"
