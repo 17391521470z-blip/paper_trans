@@ -139,6 +139,17 @@ def main() -> int:
         default=None,
         help="只跑指定模型，逗号分隔，例如 deepseek-v4-flash-silicon,glm-4.5-air-silicon",
     )
+    parser.add_argument(
+        "--worker-cmd",
+        default=None,
+        help="自动启动 worker 的命令（提供后不再交互式等待）",
+    )
+    parser.add_argument(
+        "--worker-warmup",
+        default=5,
+        type=int,
+        help="启动 worker 后等待的秒数（默认 5）",
+    )
     args = parser.parse_args()
 
     token = args.token or os.environ.get("PAPER_TRANSLATE_TOKEN", "")
@@ -151,6 +162,7 @@ def main() -> int:
     models_path = args.models or script_dir / "models.json"
     env_path = repo_root / "backend" / ".env"
     output_dir = args.output_dir or script_dir / "data" / "review_pdfs"
+    backend_dir = repo_root / "backend"
 
     if not env_path.exists():
         print(f"错误：找不到 .env: {env_path}")
@@ -175,8 +187,12 @@ def main() -> int:
 
     print(f"准备测试 {len(models)} 个模型，PDF: {args.pdf}")
     print(f"输出目录: {output_dir}")
-    print("注意：每次切换模型后需要手动重启 worker\n")
+    if args.worker_cmd:
+        print(f"worker 命令: {args.worker_cmd}\n")
+    else:
+        print("注意：每次切换模型后需要手动重启 worker\n")
 
+    worker_proc = None
     for model in models:
         name = model.get("name", "unknown")
         model_id = model.get("model", "")
@@ -189,12 +205,30 @@ def main() -> int:
         }
         update_env(env_path, updates)
         print(f"已更新 {env_path}")
-        print("请重启 worker 后按 Enter 继续...")
-        try:
-            input()
-        except (EOFError, KeyboardInterrupt):
-            print("用户中断")
-            return 0
+
+        if args.worker_cmd:
+            if worker_proc is not None:
+                print("停止上一个 worker...")
+                worker_proc.terminate()
+                try:
+                    worker_proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    worker_proc.kill()
+            print(f"启动 worker...")
+            worker_proc = subprocess.Popen(
+                args.worker_cmd,
+                cwd=backend_dir,
+                shell=True,
+            )
+            print(f"等待 {args.worker_warmup} 秒...")
+            time.sleep(args.worker_warmup)
+        else:
+            print("请重启 worker 后按 Enter 继续...")
+            try:
+                input()
+            except (EOFError, KeyboardInterrupt):
+                print("用户中断")
+                return 0
 
         try:
             print("上传 PDF...")
@@ -218,6 +252,14 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"[{name}] 出错: {exc}\n")
             continue
+
+    if worker_proc is not None:
+        print("停止 worker...")
+        worker_proc.terminate()
+        try:
+            worker_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            worker_proc.kill()
 
     print("全部测试完成")
     return 0
