@@ -34,27 +34,78 @@ class ModelResult:
 
 @dataclass(frozen=True, slots=True)
 class ModelConfig:
-    """A model to benchmark. Can be any OpenAI-compatible endpoint."""
+    """A model to benchmark. Can be any OpenAI-compatible endpoint.
+
+    Pricing supports either a flat rate or tiered rates:
+      - flat:  prompt_price_cny_per_1k / completion_price_cny_per_1k as float
+      - tiered: prompt_price_tiers / completion_price_tiers as list of
+                {max_tokens: int | None, price: float} ordered from low to high.
+    """
 
     name: str
     base_url: str
     api_key: str
     model: str
-    prompt_price_cny_per_1k: float
-    completion_price_cny_per_1k: float
+    prompt_price_cny_per_1k: float | list[dict[str, Any]] | None = None
+    completion_price_cny_per_1k: float | list[dict[str, Any]] | None = None
+    prompt_price_tiers: list[dict[str, Any]] | None = None
+    completion_price_tiers: list[dict[str, Any]] | None = None
     temperature: float = 0.3
     max_tokens: int | None = 8000
     max_retries: int = 3
+
+    def __post_init__(self) -> None:
+        # Normalize legacy flat fields into tier arrays for uniform lookup.
+        if self.prompt_price_tiers is None:
+            if isinstance(self.prompt_price_cny_per_1k, list):
+                object.__setattr__(self, "prompt_price_tiers", self.prompt_price_cny_per_1k)
+            elif self.prompt_price_cny_per_1k is not None:
+                object.__setattr__(
+                    self,
+                    "prompt_price_tiers",
+                    [{"max_tokens": None, "price": self.prompt_price_cny_per_1k}],
+                )
+        if self.completion_price_tiers is None:
+            if isinstance(self.completion_price_cny_per_1k, list):
+                object.__setattr__(
+                    self, "completion_price_tiers", self.completion_price_cny_per_1k
+                )
+            elif self.completion_price_cny_per_1k is not None:
+                object.__setattr__(
+                    self,
+                    "completion_price_tiers",
+                    [{"max_tokens": None, "price": self.completion_price_cny_per_1k}],
+                )
+
+
+def _select_tier_price(tiers: list[dict[str, Any]], tokens: int) -> float:
+    """Return the price for the first tier whose max_tokens >= tokens."""
+    for tier in tiers:
+        max_tokens = tier.get("max_tokens")
+        if max_tokens is None or tokens <= max_tokens:
+            return float(tier["price"])
+    # Fallback to the most expensive tier if tokens exceed all explicit limits.
+    return float(tiers[-1]["price"])
 
 
 def compute_cost(
     prompt_tokens: int,
     completion_tokens: int,
-    prompt_price: float,
-    completion_price: float,
+    prompt_price: float | list[dict[str, Any]],
+    completion_price: float | list[dict[str, Any]],
 ) -> float:
-    prompt_cost = (prompt_tokens / 1000.0) * prompt_price
-    completion_cost = (completion_tokens / 1000.0) * completion_price
+    prompt_tiers = (
+        prompt_price if isinstance(prompt_price, list) else [{"max_tokens": None, "price": prompt_price}]
+    )
+    completion_tiers = (
+        completion_price
+        if isinstance(completion_price, list)
+        else [{"max_tokens": None, "price": completion_price}]
+    )
+    prompt_cost = (prompt_tokens / 1000.0) * _select_tier_price(prompt_tiers, prompt_tokens)
+    completion_cost = (completion_tokens / 1000.0) * _select_tier_price(
+        completion_tiers, completion_tokens
+    )
     return round(prompt_cost + completion_cost, 6)
 
 
@@ -117,8 +168,8 @@ class LLMClient:
         cost = compute_cost(
             prompt_tokens,
             completion_tokens,
-            self.cfg.prompt_price_cny_per_1k,
-            self.cfg.completion_price_cny_per_1k,
+            self.cfg.prompt_price_tiers,
+            self.cfg.completion_price_tiers,
         )
         return {
             "translation": content,
